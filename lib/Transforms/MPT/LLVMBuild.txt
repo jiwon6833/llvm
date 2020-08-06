@@ -1,0 +1,6 @@
+[component_0]
+type = Library
+name = MPT
+parent = Transforms
+library_name = ipo
+required_libraries = Analysis Core InstCombine IRReader Linker Object ProfileData Scalar Support TransformUtils Vectorize

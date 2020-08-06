@@ -12,6 +12,7 @@ set(LLVM_LINK_COMPONENTS
   Object
   Support
   Target
+  MPT
   )
 
 add_llvm_tool(llvm-lto
