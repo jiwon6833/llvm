@@ -60,7 +60,13 @@
 #include "llvm/Transforms/ObjCARC.h"
 #include "llvm/Transforms/Utils/ModuleUtils.h"
 #include <system_error>
+
+#include "llvm/Transforms/MPT/MemoryIsolationPass.h"
+
 using namespace llvm;
+
+static cl::opt<bool>
+OptMPT("mpt", cl::init(false), cl::desc("mpt"));
 
 const char* LTOCodeGenerator::getVersionString() {
 #ifdef LLVM_VERSION_INFO
@@ -570,6 +576,10 @@ bool LTOCodeGenerator::optimize(bool DisableVerify, bool DisableInline,
   PMB.VerifyOutput = !DisableVerify;
 
   PMB.populateLTOPassManager(passes);
+
+  if (OptMPT) {
+    passes.add(new MemoryIsolationPass());
+  }
 
   // Run our queue of passes all at once now, efficiently.
   passes.run(*MergedModule);
