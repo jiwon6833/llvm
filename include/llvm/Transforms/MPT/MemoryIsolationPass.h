@@ -1,6 +1,11 @@
 #ifndef MEMORYISOLATIONPASS_H
 #define MEMORYISOLATIONPASS_H
 
+#include "llvm/IR/TypeBuilder.h"
+#include "llvm/IR/DIBuilder.h"
+#include "llvm/IR/DebugLoc.h"
+#include "llvm/IR/IRBuilder.h"
+#include "llvm/IR/Intrinsics.h"
 #include "llvm/IR/Constants.h"
 #include "llvm/IR/DerivedTypes.h"
 #include "llvm/IR/GlobalValue.h"
@@ -50,16 +55,31 @@
 
 using namespace llvm;
 
+
+
 class MemoryIsolationPass: public ModulePass{
 
     private:
         bool runOnModule(Module &);
+        Type* VoidTy;
+        Type* VoidPtrTy;
+        Type* SizeTy;
+        Type* Int32Ty;
+        Type* Int8PtrTy;
+        
+        Function* m_mte_color_tag;
+        Function* m_mte_check_tag;
+        Function* m_initialize_mpt;
 
+        StringMap<bool> m_func_def_mpt;
     public:
         static char ID;
     MemoryIsolationPass(): ModulePass(ID) {
         }
-        
+        void InitializeMPT(Module &);
+        void InsertInitializeFunction(Module &);
+        bool isFuncDefMPT(StringRef func_name);
+        bool checkIfFunctionOfInterest(Function* func);
         StringRef getPassName() const { return "MemoryIsolationPass"; }
 
 };
