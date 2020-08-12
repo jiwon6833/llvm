@@ -17,29 +17,23 @@ void MemoryIsolationPass::InitializeMPT(Module & module){
   Int8PtrTy = Type::getInt8PtrTy(module.getContext());
 
   SmallVector<Type*,8> args;  
-  module.getOrInsertFunction("__mpt_init",FunctionType::get(VoidTy,args,false));
+  //module.getOrInsertFunction("__mpt_init",FunctionType::get(VoidTy,args,false));
 
-  args.push_back(Int32Ty);
-  args.push_back(Int32Ty);
-  module.getOrInsertFunction("__mte_color_tag", TypeBuilder<void(char *, int), false>::get(module.getContext()));
+  //module.getOrInsertFunction("__mte_color_tag", TypeBuilder<void(char *, int), false>::get(module.getContext()));
 
-  args.resize(0);
-  module.getOrInsertFunction("__mte_check_tag", FunctionType::get(VoidTy,args,false));
+  //module.getOrInsertFunction("__mte_check_tag", TypeBuilder<void(char *, int), false>::get(module.getContext()));
   
   m_initialize_mpt = module.getFunction("__mpt_init");
   assert(m_initialize_mpt &&
   "m_initialize_mpt function type null?");
   
-  m_mte_check_tag = module.getFunction("__mte_check_tag");
-  
+  m_mte_check_tag = module.getFunction("__mte_check_tag");  
   assert(m_mte_check_tag &&
          "m_mte_check_check function type null?"); 
 
   m_mte_color_tag = module.getFunction("__mte_color_tag");
   assert(m_mte_color_tag &&
          "m_mte_color_tag function type null?"); 
-
-
 
   return;
 }
@@ -83,14 +77,51 @@ void MemoryIsolationPass::InsertInitializeFunction(Module& module){
 
   SmallVector<Value*, 8> args;
   CallInst::Create(m_initialize_mpt, args,"", InsertPos);
+  int func_num = 0;
+  for(Module::iterator ff_begin = module.begin(), ff_end = module.end(); ff_begin != ff_end; ff_begin++){
+    if(dyn_cast<Function>(ff_begin)->getName().find("llvm") == 0)
+      continue;
+    args.resize(0);
+    func_num++;
+    Constant* func_ptr = ConstantExpr::getBitCast(dyn_cast<Function>(ff_begin), VoidPtrTy);
+    args.push_back(func_ptr);
+    args.push_back(ConstantInt::get( module.getContext() , APInt(32, StringRef("1"), 10)));
+    CallInst::Create(m_mte_color_tag, args, "",InsertPos);
+  }
+  dbgs() << "colored function : " << func_num << '\n';
+}
+void MemoryIsolationPass::InsertColorCheck(Module & module){
+  for(Module::iterator ff_begin = module.begin(), ff_end = module.end(); ff_begin != ff_end; ff_begin++){
+    if(dyn_cast<Function>(ff_begin)->getName().find("llvm") == 0)
+      continue;
+    Function* func_ptr = dyn_cast<Function>(ff_begin);
+    for(User* U : func_ptr->users()){
+      CallInst * CI = dyn_cast<CallInst>(U);
+      if(!CI)
+        continue;
+
+      Function* func = CI->getCalledFunction();
+      if(func)
+        if(!checkIfFunctionOfInterest(func))
+          continue;
+      IRBuilder<> builder(module.getContext());
+      builder.SetInsertPoint(CI);
+
+      SmallVector<Value*, 8> args;
+
+      Constant* func_ptr = ConstantExpr::getBitCast(dyn_cast<Function>(CI->getCalledValue()), VoidPtrTy);
+      args.push_back(func_ptr);
+      args.push_back(ConstantInt::get( module.getContext() , APInt(32, StringRef("1"), 10)));
+
+      CallInst::Create(m_mte_check_tag, args, "", CI);
+    }
+  }
 }
 bool MemoryIsolationPass::runOnModule(Module & module) {
   InitializeMPT(module);
   InsertInitializeFunction(module);
-  //find function address
-  for(Module::iterator ff_begin = module.begin(), ff_end = module.end(); ff_begin != ff_end; ++ff_begin){
-    Function * func_ptr = dyn_cast<Function>(ff_begin);
-  }
+
+  InsertColorCheck(module);
   errs() << "Memory Isolation Pass\n";
   return false;
 }

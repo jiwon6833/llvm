@@ -78,6 +78,7 @@ class MemoryIsolationPass: public ModulePass{
         }
         void InitializeMPT(Module &);
         void InsertInitializeFunction(Module &);
+        void InsertColorCheck(Module &);
         bool isFuncDefMPT(StringRef func_name);
         bool checkIfFunctionOfInterest(Function* func);
         StringRef getPassName() const { return "MemoryIsolationPass"; }
