@@ -1,6 +1,7 @@
 #ifndef MEMORYISOLATIONPASS_H
 #define MEMORYISOLATIONPASS_H
 
+#include "llvm/Transforms/Utils/Cloning.h"
 #include "llvm/IR/TypeBuilder.h"
 #include "llvm/IR/DIBuilder.h"
 #include "llvm/IR/DebugLoc.h"
@@ -70,6 +71,7 @@ class MemoryIsolationPass: public ModulePass{
         Function* m_mte_color_tag;
         Function* m_mte_check_tag;
         Function* m_initialize_mpt;
+        DenseMap<BlockAddress *, bool> ColoredBlocks;
 
         StringMap<bool> m_func_def_mpt;
     public:

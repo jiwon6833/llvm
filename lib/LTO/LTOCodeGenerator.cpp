@@ -62,6 +62,7 @@
 #include <system_error>
 
 #include "llvm/Transforms/MPT/MemoryIsolationPass.h"
+#include "llvm/Transforms/IPO/AlwaysInliner.h"
 
 using namespace llvm;
 
@@ -579,6 +580,9 @@ bool LTOCodeGenerator::optimize(bool DisableVerify, bool DisableInline,
 
   if (OptMPT) {
     passes.add(new MemoryIsolationPass());
+    if (!DisableInline)
+      passes.add(createAlwaysInlinerLegacyPass());
+    //passes.add(createVerifierPass());
   }
 
   // Run our queue of passes all at once now, efficiently.

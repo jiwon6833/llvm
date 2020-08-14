@@ -78,6 +78,7 @@ void MemoryIsolationPass::InsertInitializeFunction(Module& module){
   SmallVector<Value*, 8> args;
   CallInst::Create(m_initialize_mpt, args,"", InsertPos);
   int func_num = 0;
+  int bb_num = 0;
   for(Module::iterator ff_begin = module.begin(), ff_end = module.end(); ff_begin != ff_end; ff_begin++){
     if(dyn_cast<Function>(ff_begin)->getName().find("llvm") == 0)
       continue;
@@ -86,9 +87,25 @@ void MemoryIsolationPass::InsertInitializeFunction(Module& module){
     Constant* func_ptr = ConstantExpr::getBitCast(dyn_cast<Function>(ff_begin), VoidPtrTy);
     args.push_back(func_ptr);
     args.push_back(ConstantInt::get( module.getContext() , APInt(32, StringRef("1"), 10)));
-    CallInst::Create(m_mte_color_tag, args, "",InsertPos);
+    //CallInst::Create(m_mte_color_tag, args, "",InsertPos); Duplicated coloring operations
+
+    for (auto &BBI : (dyn_cast<Function>(ff_begin))->getBasicBlockList()){
+      BasicBlock* BB = dyn_cast<BasicBlock>(&BBI);
+      BlockAddress * BA = BlockAddress::get((dyn_cast<Function>(ff_begin)), BB);
+      if(!BA)
+        continue;
+      args.resize(0);
+      
+      Constant* b_addr = ConstantExpr::getBitCast(dyn_cast<Constant>(BA), VoidPtrTy);
+
+      args.push_back(b_addr);
+      args.push_back(ConstantInt::get( module.getContext() , APInt(32, StringRef("1"), 10)));
+      CallInst::Create(m_mte_color_tag, args, "",InsertPos);
+      bb_num++;
+    }
   }
   dbgs() << "colored function : " << func_num << '\n';
+  dbgs() << "colored BB : " << bb_num << '\n';
 }
 void MemoryIsolationPass::InsertColorCheck(Module & module){
   for(Module::iterator ff_begin = module.begin(), ff_end = module.end(); ff_begin != ff_end; ff_begin++){
@@ -115,6 +132,17 @@ void MemoryIsolationPass::InsertColorCheck(Module & module){
 
       CallInst::Create(m_mte_check_tag, args, "", CI);
     }
+    
+    for(auto &BBI : func_ptr->getBasicBlockList()){
+      for(auto &InstI: (&BBI)->getInstList()){
+        if(isa<IndirectBrInst>(InstI))
+          assert(1 & "indirect")//(&InstI)->dump();
+        if(!isa<BranchInst>(InstI))
+          continue;
+        BranchInst * BI = dyn_cast<BranchInst>(&InstI);
+
+      }
+    }// br check
   }
 }
 bool MemoryIsolationPass::runOnModule(Module & module) {
