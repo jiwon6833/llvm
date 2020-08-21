@@ -51,9 +51,9 @@
 using namespace llvm;
 
 namespace {
-  struct Nomad : public ModulePass {
+  struct Nomad2 : public ModulePass {
     static char ID;
-    Nomad() : ModulePass(ID) {}
+    Nomad2() : ModulePass(ID) {}
     bool runOnModule(Module & module) {
       
       Module *M = &module;
@@ -63,11 +63,11 @@ namespace {
           BasicBlock *BB = &BBI;
           for (auto &InstI : BB->getInstList()) {
             Instruction *insn = &InstI;
-            if (StoreInst *sti = dyn_cast<StoreInst>(insn)) {
-              Value *val = sti->getPointerOperand();
-              IRBuilder<> load(insn);
-              LoadInst *test = load.CreateLoad(val, true);
-            }
+            //if (StoreInst *sti = dyn_cast<StoreInst>(insn)) {
+              //Value *val = sti->getPointerOperand();
+              //IRBuilder<> load(insn);
+              //LoadInst *test = load.CreateLoad(val, true);
+            //}
           }
         }
       }
@@ -76,6 +76,6 @@ namespace {
   };
 }
 
-char Nomad::ID = 0;
-static RegisterPass<Nomad> X("nomad", "nomad pass", false, true);
-static RegisterStandardPasses Y(PassManagerBuilder::EP_FullLinkTimeOptimizationLast, [](const PassManagerBuilder &Builder, legacy::PassManagerBase &PM) {PM.add(new Nomad());});
+char Nomad2::ID = 0;
+static RegisterPass<Nomad2> X("nomad2", "nomad pass2", false, true);
+static RegisterStandardPasses Y(PassManagerBuilder::EP_FullLinkTimeOptimizationLast, [](const PassManagerBuilder &Builder, legacy::PassManagerBase &PM) {PM.add(new Nomad2());});
