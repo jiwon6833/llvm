@@ -3,6 +3,7 @@
 #include "llvm/CodeGen/MachineBasicBlock.h"
 #include "llvm/CodeGen/MachineFunction.h"
 #include "llvm/CodeGen/MachineFunctionPass.h"
+#include "llvm/CodeGen/MachineInstrBuilder.h"
 
 using namespace llvm;
 
@@ -22,6 +23,7 @@ namespace {
         }
         const TargetInstrInfo *TII;
         const AArch64Subtarget *STI;
+        int count = 0;
         bool runOnMachineFunction(MachineFunction &Fn) override;
         //const char *getPassName() const override {
         //    return AARCH64_TESTPASS_NAME;
@@ -239,7 +241,13 @@ bool AArch64TestPass::runOnMachineFunction(MachineFunction &Fn) {
     bool Modified = false;
     for (MachineBasicBlock &MFI : Fn) {
         for (MachineInstr &MI : MFI) {
+            if (!isMemoryOp(MI))
+                continue;
+            count++;
+            dbgs() << "instrumented : " << count << "\n";
             
+            unsigned Reg = MI.getOperand(0).getReg();
+            BuildMI(MFI, MI, MI.getDebugLoc(), TII->get(AArch64::ADDG), Reg).addReg(Reg).addImm(0);   
         }
     }
     return Modified;
