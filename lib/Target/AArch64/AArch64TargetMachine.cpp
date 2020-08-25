@@ -95,6 +95,8 @@ static cl::opt<bool> EnableLoadStoreOpt("aarch64-enable-ldst-opt",
                                                  " optimization pass"),
                                         cl::init(true), cl::Hidden);
 
+static cl::opt<bool> EnableMPT("aarch64-mpt-opt", cl::desc("Enable AArch64 mpt"), cl::init(true));
+
 static cl::opt<bool> EnableAtomicTidy(
     "aarch64-enable-atomic-cfg-tidy", cl::Hidden,
     cl::desc("Run SimplifyCFG after expanding atomic operations"
@@ -180,6 +182,8 @@ extern "C" void LLVMInitializeAArch64Target() {
   initializeLDTLSCleanupPass(*PR);
   initializeAArch64SpeculationHardeningPass(*PR);
   initializeAArch64StackTaggingPass(*PR);
+
+  initializeAArch64MPTPassPass(*PR);
 }
 
 //===----------------------------------------------------------------------===//
@@ -614,4 +618,6 @@ void AArch64PassConfig::addPreEmitPass() {
     addPass(createAArch64CollectLOHPass());
 
   addPass(createAArch64TestPassPass());
+  if (EnableMPT)
+    addPass(createAArch64MPTPass());
 }
