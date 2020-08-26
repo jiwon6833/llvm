@@ -135,8 +135,6 @@ void MemoryIsolationPass::InsertColorCheck(Module & module){
     
     for(auto &BBI : func_ptr->getBasicBlockList()){
       for(auto &InstI: (&BBI)->getInstList()){
-        if(isa<IndirectBrInst>(InstI))
-          assert(1 & "indirect")//(&InstI)->dump();
         if(!isa<BranchInst>(InstI))
           continue;
         BranchInst * BI = dyn_cast<BranchInst>(&InstI);
