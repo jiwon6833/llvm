@@ -15,6 +15,10 @@
 #include "llvm/Support/Debug.h"
 #include "llvm/Support/raw_ostream.h"
 
+#include "llvm/IR/GlobalVariable.h"
+#include "llvm/IR/Constant.h"
+#include "llvm/IR/GlobalValue.h"
+
 #define DEBUG_TYPE "aarch64-mpt"
 
 using namespace llvm;
@@ -147,26 +151,19 @@ bool AArch64MPT::runOnMachineFunction(MachineFunction &MF) {
             
             const auto MIOpcode = MIi->getOpcode();
             if (isStore(*MIi) || isLoad(*MIi)) {
-                const auto &DL = MIi->getDebugLoc();
-                //const unsigned dst = MIi->getOperand
-
-                //auto op1 = MIi->getOperand(0);
-                //auto op2 = MIi->getOperand(1);
-                //const unsigned dst = MIi->getOperand(0).getReg();
-                //const unsigned src = MIi->getOperand(1).getReg();
-
-                //dbgs() << "op1: " << op1 << "\n";
-                //dbgs() << "op2: " << op2 << "\n";
-                //dbgs() << "dst: " << dst << " src: " << src << "\n\n";
+                
+                if (MIi->getOperand(0).isReg()) {
+                    unsigned Reg = MIi->getOperand(0).getReg();
+                    const auto &DL = MIi->getDebugLoc();
+                    BuildMI(MBB, MIi, DL, TII->get(AArch64::MOVKXi), Reg).addReg(Reg).addImm(0).addImm(0);
+                    found = true;
+                }
 
                 count++;
                 dbgs() << count << " ";
                 dbgs() << MIi->getOpcode() << " ";
-                //dbgs() << "MachineInstr: " << MIi->print() << "\n";
                 dbgs() << MIi->getNumOperands() << " ";
-                //if (MIi->getNumMemOperands() != 0) {
-                    //auto op1 = MIi->getOperand(0);
-                //}
+
                 if (MIi->getNumOperands() == 2) {
                     dbgs() << "| ";
                     auto op1 = MIi->getOperand(0);
@@ -177,8 +174,16 @@ bool AArch64MPT::runOnMachineFunction(MachineFunction &MF) {
                         dbgs() << "CImm";
                     if(op2.isFPImm())
                         dbgs() << "FPImm";
-                    if(op2.isReg())
+                    if(op2.isReg()) {
                         dbgs() << "Register";
+
+                        //unsigned Reg = MIi->getOperand(0).getReg();
+                        //const auto &DL = MIi->getDebugLoc();
+                        //BuildMI(MBB, MIi, MIi->getDebugLoc(), TII->get(AArch64::ADDXri), Reg).addReg(Reg).addImm(0);
+                        //BuildMI(MBB, MIi, DL, TII->get(AArch64::MOVKXi), Reg).addReg(Reg).addImm(0).addImm(0);
+                        
+                        //found = true;
+                    }
                     if(op2.isMBB())
                         dbgs() << "MBB";
                     if(op2.isTargetIndex())
@@ -189,8 +194,12 @@ bool AArch64MPT::runOnMachineFunction(MachineFunction &MF) {
                         dbgs() << "Global ";
                         auto *GV = op2.getGlobal();
                         if(GV->isDefinitionExact()) {
-                            dbgs() << "exact ";
-                            dbgs() << "address space " << GV->getAddressSpace();
+                            dbgs() << "exact " << op2.getOffset();
+                            //op2.dump();
+                            //Constant* test = GV->
+                            //dbgs() << "address space " << GV->getAddressSpace();
+                            //GlobalObject *GO = GV->getBaseObject();
+
                         }
                     }
                     if(op2.isSymbol())
