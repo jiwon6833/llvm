@@ -139,7 +139,7 @@ void insertMPTInstr(MachineBasicBlock &MBB, MachineInstr *MIi, unsigned ptrReg,
 
 bool AArch64MPT::runOnMachineFunction(MachineFunction &MF) {
     
-    dbgs() << "AArch64 MPT\n";
+    //dbgs() << "AArch64 MPT\n";
 
     bool found = false;
 
@@ -148,7 +148,8 @@ bool AArch64MPT::runOnMachineFunction(MachineFunction &MF) {
 
     for (auto &MBB : MF) {
         for (auto MIi = MBB.instr_begin(); MIi != MBB.instr_end(); MIi++) {
-            
+           
+/* 
             const auto MIOpcode = MIi->getOpcode();
             if (isStore(*MIi) || isLoad(*MIi)) {
                 
@@ -209,6 +210,7 @@ bool AArch64MPT::runOnMachineFunction(MachineFunction &MF) {
                 }
                 dbgs() << "\n";
             }
+*/
         }
     }
     return found;
