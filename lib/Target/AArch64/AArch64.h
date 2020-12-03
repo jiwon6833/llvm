@@ -58,6 +58,7 @@ createAArch64InstructionSelector(const AArch64TargetMachine &,
 FunctionPass *createAArch64PreLegalizeCombiner();
 FunctionPass *createAArch64StackTaggingPass();
 FunctionPass *createAArch64MPT();
+FunctionPass *createAArch64MemoryIsolationPass();
 
 void initializeAArch64A53Fix835769Pass(PassRegistry&);
 void initializeAArch64A57FPLoadBalancingPass(PassRegistry&);

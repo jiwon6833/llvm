@@ -556,6 +556,8 @@ void AArch64PassConfig::addPreRegAlloc() {
     // be register coaleascer friendly.
     addPass(&PeepholeOptimizerID);
   }
+
+  //addPass(createAArch64MemoryIsolationPass());
 }
 
 void AArch64PassConfig::addPostRegAlloc() {
@@ -566,6 +568,8 @@ void AArch64PassConfig::addPostRegAlloc() {
   if (TM->getOptLevel() != CodeGenOpt::None && usingDefaultRegAlloc())
     // Improve performance for some FP/SIMD code for A57.
     addPass(createAArch64A57FPLoadBalancing());
+    
+    //addPass(createAArch64MemoryIsolationPass());
 }
 
 void AArch64PassConfig::addPreSched2() {
@@ -576,6 +580,8 @@ void AArch64PassConfig::addPreSched2() {
     if (EnableLoadStoreOpt)
       addPass(createAArch64LoadStoreOptimizationPass());
   }
+
+  //addPass(createAArch64MemoryIsolationPass());
 
   // The AArch64SpeculationHardeningPass destroys dominator tree and natural
   // loop info, which is needed for the FalkorHWPFFixPass and also later on.
@@ -614,5 +620,6 @@ void AArch64PassConfig::addPreEmitPass() {
       TM->getTargetTriple().isOSBinFormatMachO())
     addPass(createAArch64CollectLOHPass());
 
-  addPass(createAArch64MPT());
+  //addPass(createAArch64MPT());
+  addPass(createAArch64MemoryIsolationPass());
 }
