@@ -148,6 +148,101 @@ void MemoryIsolationPass::InsertColorCheck(Module & module){
     }// br check
   }
 }
+void MemoryIsolationPass::AddLoadCheck(Module & module){
+  Module *M = &module;
+  PointerType* VoidPtrTy = PointerType::getUnqual(Type::getInt8Ty(module.getContext()));
+
+#if 0 // instrumentation
+  for (auto curFref = M->getFunctionList().begin(), endFref = M->getFunctionList().end(); curFref != endFref; ++curFref) {
+    for (auto &BBI : curFref->getBasicBlockList()) {
+      BasicBlock *BB = &BBI;
+      for (auto &InstI : BB->getInstList()) {
+        Instruction *insn = &InstI;
+#if 1 // store
+        if (StoreInst *sti = dyn_cast<StoreInst>(insn)) {
+          Value *val = sti->getPointerOperand();
+          IRBuilder<> load(insn);
+          LoadInst *test = load.CreateLoad(val, true);
+        }
+#endif // store
+#if 1 // branch
+        if (BranchInst *bri = dyn_cast<BranchInst>(insn)) {
+          IRBuilder<> load(insn);
+
+          for(int i = 1; i < bri->getNumSuccessors();i++){
+            Value* val  = bri->getOperand(i);
+
+            BasicBlock * BB = dyn_cast<BasicBlock>(val);
+            BlockAddress * BA = BlockAddress::get((dyn_cast<Function>(curFref)),BB);
+            Value* basic_address =  ConstantExpr::getBitCast(dyn_cast<Constant>(BA), VoidPtrTy);
+            LoadInst *test = load.CreateLoad(basic_address, true);
+          }
+        }
+#endif // branch
+#if 1 // return
+        if (ReturnInst *ret = dyn_cast<ReturnInst>(insn)) {
+          IRBuilder<> load(insn);
+          Constant* func_con = ConstantExpr::getBitCast(dyn_cast<Function>(insn->getParent()->getParent()), VoidPtrTy);
+          LoadInst *test = load.CreateLoad(func_con, true);
+        }
+        #endif
+#if 1 // call
+        if (CallInst *ci = dyn_cast<CallInst>(insn)) {
+          Value *val = ci->getCalledValue();
+
+
+          if(Function* func_ptr = dyn_cast<Function>(val))
+            {
+              if(func_ptr->getName().find(StringRef("llvm")) == 0)
+                continue;
+            }
+          else{
+            ci->dump();
+            IRBuilder<> load(insn);
+            Constant* func_con = ConstantExpr::getBitCast(dyn_cast<Function>(insn->getParent()->getParent()), VoidPtrTy);
+            LoadInst *test = load.CreateLoad(func_con, true);
+            // TODO indirecto call
+            //val = val->stripPointerCasts();
+            continue;
+          }
+
+        }
+#endif // call
+      }
+    }
+  }
+
+#endif // instrumentation
+
+#if 0 // lxd dummy
+  for (auto curFref = M->getFunctionList().begin(), endFref = M->getFunctionList().end(); curFref != endFref; ++curFref){
+    if(Function* func_ptr = dyn_cast<Function>(curFref)){
+      if((func_ptr->getName().find(StringRef("dummy_xmit")) == 0)){
+
+        int i = 0;
+        Instruction* inst;
+        for (auto &BBI : curFref->getBasicBlockList()) {
+          BasicBlock *BB = &BBI;
+          for (auto &InstI : BB->getInstList()) {
+            if(i==0){
+              inst = &InstI;
+              i = 1;
+            }
+          }
+        }
+        for(int i = 0; i < 500;i++){
+          IRBuilder<> load(inst);
+          Constant* func_con = ConstantExpr::getBitCast(dyn_cast<Function>(inst->getParent()->getParent()), VoidPtrTy);
+          LoadInst *test = load.CreateLoad(func_con, true);
+        }
+
+      }
+    }
+  }
+#endif // lxd dummy
+
+  return;
+}
 bool MemoryIsolationPass::runOnModule(Module & module) {
   InitializeMPT(module);
   InsertInitializeFunction(module);
